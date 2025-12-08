@@ -44,6 +44,16 @@ inline void EMT_24(uint8_t x, uint8_t y)
     );
 }
 
+// Тип цвета и значения цветов для псевдографики
+enum BkColor { Black=0, Red=1, Green=2, Blue=3 } ;
+const uint16_t colors[4] = { 0, 0177777, 0125252, 052525 } ;
+
+// Установка цвета переднего плана
+void setColor(enum BkColor bkcolor) {
+  const uint16_t CELL_COLOR = 0214 ;
+  *((uint16_t *)CELL_COLOR)=colors[bkcolor];
+}
+
 void main()
 {
     EMT_14() ;
@@ -53,10 +63,12 @@ void main()
     EMT_16(0232) ;
 
     // Рисование рамки
+    setColor(Red) ;
     EMT_16(0252) ;
     for (int i=1; i<31; i++) EMT_16(0265) ;
     EMT_16(0243) ;
 
+    setColor(Green) ;
     for (int i=1; i<20; i++) {
         EMT_24(0,i) ;
         EMT_16(0267) ;
@@ -64,6 +76,7 @@ void main()
         EMT_16(0267) ;
     }
 
+    setColor(Blue) ;
     EMT_16(0246) ;
     for (int i=1; i<31; i++) EMT_16(0265) ;
     EMT_16(0271) ;
