@@ -54,6 +54,25 @@ inline void DenyKeyboardInterrupt()
     );
 }
 
+inline uint8_t keyHolded()
+{
+    uint8_t rv;
+    asm volatile (
+        "mov $0177716,r0\n"
+        "mov (r0),%0\n"
+        : "=r" (rv): : "r0","cc"
+    );
+
+    if ((rv & 0100)!=0) return 0 ;
+
+    asm volatile (
+        "mov $0177662,r0\n"
+        "mov (r0),%0\n"
+        : "=r" (rv): : "r0","cc"
+    );
+    return rv;
+}
+
 // Тип цвета и значения цветов для псевдографики
 enum BkColor { Black=0, Red=1, Green=2, Blue=3 } ;
 const uint16_t colors[4] = { 0, 0177777, 0125252, 052525 } ;
@@ -94,7 +113,12 @@ void main()
     for (int i=1; i<31; i++) EMT_16(0265) ;
     EMT_16(0271) ;
 
+    EMT_24(0,0) ;
     // Ожидание нажатия
-    char c = EMT_6() ;
+    for (;;) {
+       uint8_t k = keyHolded() ;
+       if (k==0) EMT_16(32) ; else EMT_16(k) ;
+       if (k==3) break ; // Выход по КТ
+    }
     EMT_14() ;
 }
