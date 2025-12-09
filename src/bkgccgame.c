@@ -83,39 +83,46 @@ void setColor(enum BkColor bkcolor) {
   *((uint16_t *)CELL_COLOR)=colors[bkcolor];
 }
 
+void drawCharAt(uint8_t x, uint8_t y, char c) {
+  EMT_24(x,y) ;
+  EMT_16(c) ;
+}
+
 // Функции логики
 uint8_t enemyx ;
 uint8_t enemyy ;
 uint8_t playerx ;
 uint8_t playery ;
 
-const uint8_t SPACE = 1 ;
+const char HERO = 043 ;
+const char ENEMY = 044 ;
+const char SPACE = 040 ;
+
+const uint8_t BORDER = 1 ;
 const uint8_t SIZEX = 30 ;
 const uint8_t SIZEY = 20 ;
+const uint8_t SPAWNX0 = 1 ;
+const uint8_t SPAWNY0 = 1 ;
 
 void newEnemy() {
-   enemyx = SPACE ;
-   enemyy = SPACE ;
+   enemyx = SPAWNX0 ;
+   enemyy = SPAWNY0 ;
 }
 
 void movePlayer(int8_t dx, int8_t dy) {
     setColor(Green) ;
-    EMT_24(playerx,playery) ;
-    EMT_16(040) ;
+    drawCharAt(playerx,playery,SPACE) ;
     playerx+=dx ;
     playery+=dy ;
-    EMT_24(playerx,playery) ;
-    EMT_16(043) ;
+    drawCharAt(playerx,playery,HERO) ;
 }
 
 void moveEnemy(int8_t dx, int8_t dy) {
     setColor(Red) ;
-    EMT_24(enemyx,enemyy) ;
-    EMT_16(040) ;
+    drawCharAt(enemyx,enemyy,SPACE) ;
     enemyx+=dx ;
     enemyy+=dy ;
-    EMT_24(enemyx,enemyy) ;
-    EMT_16(044) ;
+    drawCharAt(enemyx,enemyy,ENEMY) ;
 }
 
 uint8_t iabs(int8_t v) {
@@ -134,22 +141,18 @@ void main()
     DenyKeyboardInterrupt() ;
 
     // Рисование рамки
-    setColor(Red) ;
+    setColor(Green) ;
     EMT_16(0252) ;
-    for (int i=1; i<=30; i++) EMT_16(0265) ;
+    for (int i=BORDER; i<=SIZEX; i++) EMT_16(0265) ;
     EMT_16(0243) ;
 
-    setColor(Green) ;
-    for (int i=1; i<=20; i++) {
-        EMT_24(0,i) ;
-        EMT_16(0267) ;
-        EMT_24(31,i) ;
-        EMT_16(0267) ;
+    for (int i=BORDER; i<=SIZEY; i++) {
+        drawCharAt(0,i,0267) ;
+        drawCharAt(31,i,0267) ;
     }
 
-    setColor(Blue) ;
     EMT_16(0246) ;
-    for (int i=1; i<31; i++) EMT_16(0265) ;
+    for (int i=BORDER; i<=SIZEX; i++) EMT_16(0265) ;
     EMT_16(0271) ;
     
     newEnemy() ;
@@ -157,11 +160,9 @@ void main()
     playery = 10 ;
 
     setColor(Green) ;
-    EMT_24(playerx,playery) ;
-    EMT_16(043) ;
+    drawCharAt(playerx,playery,HERO) ;
     setColor(Red) ;
-    EMT_24(enemyx,enemyy) ;
-    EMT_16(044) ;
+    drawCharAt(enemyx,enemyy,ENEMY) ;
 
     uint16_t ticks = 0 ;
 
@@ -170,13 +171,13 @@ void main()
        uint8_t key = keyHolded() ;
        if (ticks==0) { // Ограничения по тактам
          if (key==010) // Влево
-           if (playerx>SPACE) movePlayer(-1,0) ;
+           if (playerx>BORDER) movePlayer(-1,0) ;
          if (key==031) // Вправо
-           if (playerx<=SIZEX-SPACE) movePlayer(1,0) ;
+           if (playerx<=SIZEX-BORDER) movePlayer(1,0) ;
          if (key==032) // Вверх
-           if (playery>SPACE) movePlayer(0,-1) ;
+           if (playery>BORDER) movePlayer(0,-1) ;
          if (key==033) // Вниз
-           if (playery<=SIZEY-SPACE) movePlayer(0,1) ;
+           if (playery<=SIZEY-BORDER) movePlayer(0,1) ;
 
          int8_t dx=0 ;
          int8_t dy=0 ;
@@ -186,11 +187,9 @@ void main()
          if (playery>enemyy) dy=1 ;
          moveEnemy(dx,dy) ;
          if ((iabs(playerx-enemyx)<2)&&(iabs(playery-enemyy)<2)) {
-           EMT_24(enemyx,enemyy) ;
-           EMT_16(040) ;
+           drawCharAt(enemyx,enemyy,SPACE) ;
            newEnemy() ;
-           EMT_24(enemyx,enemyy) ;
-           EMT_16(044) ;
+           drawCharAt(enemyx,enemyy,ENEMY) ;
          }
        }
        if (key==3) break ; // Выход по КТ
