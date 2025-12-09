@@ -83,6 +83,45 @@ void setColor(enum BkColor bkcolor) {
   *((uint16_t *)CELL_COLOR)=colors[bkcolor];
 }
 
+// Функции логики
+uint8_t enemyx ;
+uint8_t enemyy ;
+uint8_t playerx ;
+uint8_t playery ;
+
+const uint8_t SPACE = 1 ;
+const uint8_t SIZEX = 30 ;
+const uint8_t SIZEY = 20 ;
+
+void newEnemy() {
+   enemyx = SPACE ;
+   enemyy = SPACE ;
+}
+
+void movePlayer(int8_t dx, int8_t dy) {
+    setColor(Green) ;
+    EMT_24(playerx,playery) ;
+    EMT_16(040) ;
+    playerx+=dx ;
+    playery+=dy ;
+    EMT_24(playerx,playery) ;
+    EMT_16(043) ;
+}
+
+void moveEnemy(int8_t dx, int8_t dy) {
+    setColor(Red) ;
+    EMT_24(enemyx,enemyy) ;
+    EMT_16(040) ;
+    enemyx+=dx ;
+    enemyy+=dy ;
+    EMT_24(enemyx,enemyy) ;
+    EMT_16(044) ;
+}
+
+uint8_t iabs(int8_t v) {
+  if (v<0) return -v ; else return v ;
+}
+
 void main()
 {
     EMT_14() ;
@@ -97,11 +136,11 @@ void main()
     // Рисование рамки
     setColor(Red) ;
     EMT_16(0252) ;
-    for (int i=1; i<31; i++) EMT_16(0265) ;
+    for (int i=1; i<=30; i++) EMT_16(0265) ;
     EMT_16(0243) ;
 
     setColor(Green) ;
-    for (int i=1; i<20; i++) {
+    for (int i=1; i<=20; i++) {
         EMT_24(0,i) ;
         EMT_16(0267) ;
         EMT_24(31,i) ;
@@ -112,13 +151,51 @@ void main()
     EMT_16(0246) ;
     for (int i=1; i<31; i++) EMT_16(0265) ;
     EMT_16(0271) ;
+    
+    newEnemy() ;
+    playerx = 15 ;
+    playery = 10 ;
 
-    EMT_24(0,0) ;
-    // Ожидание нажатия
+    setColor(Green) ;
+    EMT_24(playerx,playery) ;
+    EMT_16(043) ;
+    setColor(Red) ;
+    EMT_24(enemyx,enemyy) ;
+    EMT_16(044) ;
+
+    uint16_t ticks = 0 ;
+
     for (;;) {
-       uint8_t k = keyHolded() ;
-       if (k==0) EMT_16(32) ; else EMT_16(k) ;
-       if (k==3) break ; // Выход по КТ
+       // Проверка нажатия
+       uint8_t key = keyHolded() ;
+       if (ticks==0) { // Ограничения по тактам
+         if (key==010) // Влево
+           if (playerx>SPACE) movePlayer(-1,0) ;
+         if (key==031) // Вправо
+           if (playerx<=SIZEX-SPACE) movePlayer(1,0) ;
+         if (key==032) // Вверх
+           if (playery>SPACE) movePlayer(0,-1) ;
+         if (key==033) // Вниз
+           if (playery<=SIZEY-SPACE) movePlayer(0,1) ;
+
+         int8_t dx=0 ;
+         int8_t dy=0 ;
+         if (playerx<enemyx) dx=-1 ;
+         if (playerx>enemyx) dx=1 ;
+         if (playery<enemyy) dy=-1 ;
+         if (playery>enemyy) dy=1 ;
+         moveEnemy(dx,dy) ;
+         if ((iabs(playerx-enemyx)<2)&&(iabs(playery-enemyy)<2)) {
+           EMT_24(enemyx,enemyy) ;
+           EMT_16(040) ;
+           newEnemy() ;
+           EMT_24(enemyx,enemyy) ;
+           EMT_16(044) ;
+         }
+       }
+       if (key==3) break ; // Выход по КТ
+       ticks++ ;
+       if (ticks>2000) ticks=0 ;
     }
     EMT_14() ;
 }
