@@ -44,6 +44,16 @@ inline void EMT_24(uint8_t x, uint8_t y)
     );
 }
 
+// Запрет на прерывание клавиатуры
+inline void DenyKeyboardInterrupt()
+{
+    asm (
+        "mov $0177660, r0\n\t"
+        "bis $0100, (r0)\n"
+        : : : "r0","cc"
+    );
+}
+
 // Тип цвета и значения цветов для псевдографики
 enum BkColor { Black=0, Red=1, Green=2, Blue=3 } ;
 const uint16_t colors[4] = { 0, 0177777, 0125252, 052525 } ;
@@ -61,6 +71,9 @@ void main()
     EMT_16(0233) ;
     // Скрытие курсора
     EMT_16(0232) ;
+
+    //Запрещаем прерывания от клавиатуры, чтобы не мешало игре
+    DenyKeyboardInterrupt() ;
 
     // Рисование рамки
     setColor(Red) ;
