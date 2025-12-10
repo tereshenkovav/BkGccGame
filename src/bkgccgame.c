@@ -93,9 +93,14 @@ uint8_t enemyx ;
 uint8_t enemyy ;
 uint8_t playerx ;
 uint8_t playery ;
+uint8_t bonusx ;
+uint8_t bonusy ;
+uint16_t T_enemy ;
+uint16_t T_player ;
 
-const char HERO = 043 ;
+const char HERO = 0100 ;
 const char ENEMY = 044 ;
+const char BONUS = 053 ;
 const char SPACE = 040 ;
 
 const uint8_t BORDER = 1 ;
@@ -123,6 +128,12 @@ void moveEnemy(int8_t dx, int8_t dy) {
     enemyx+=dx ;
     enemyy+=dy ;
     drawCharAt(enemyx,enemyy,ENEMY) ;
+}
+
+void drawDigitAt(uint8_t x, uint8_t y, uint8_t d) {
+  setColor(Green) ;
+  EMT_24(x,y) ;
+  EMT_16(060+d) ;
 }
 
 uint8_t iabs(int8_t v) {
@@ -158,18 +169,28 @@ void main()
     newEnemy() ;
     playerx = 15 ;
     playery = 10 ;
+    bonusx = 25 ;
+    bonusy = 17 ;
 
     setColor(Green) ;
     drawCharAt(playerx,playery,HERO) ;
     setColor(Red) ;
     drawCharAt(enemyx,enemyy,ENEMY) ;
+    setColor(Blue) ;
+    drawCharAt(bonusx,bonusy,BONUS) ;
 
-    uint16_t ticks = 0 ;
+    uint16_t ticks_common = 0 ;
+    uint16_t ticks_enemy = 0 ;
+    uint16_t ticks_player = 0 ;
+    uint8_t left_bonus = 0 ;
+
+    T_enemy = 2000 ;
+    T_player = 2000 ;
 
     for (;;) {
        // Проверка нажатия
        uint8_t key = keyHolded() ;
-       if (ticks==0) { // Ограничения по тактам
+       if (ticks_player==0) { // Ограничения по тактам
          if (key==010) // Влево
            if (playerx>BORDER) movePlayer(-1,0) ;
          if (key==031) // Вправо
@@ -178,13 +199,25 @@ void main()
            if (playery>BORDER) movePlayer(0,-1) ;
          if (key==033) // Вниз
            if (playery<=SIZEY-BORDER) movePlayer(0,1) ;
-
+         if ((playerx==bonusx)&&(playery==bonusy)) {
+           // Перекидывание бонуса на другой конец доски вместо рандома
+           bonusx = SIZEX-bonusx ;
+           bonusy = SIZEY-bonusy ;
+           setColor(Blue) ;
+           drawCharAt(bonusx,bonusy,BONUS) ;
+           T_player = 1000 ;
+           left_bonus = 9 ;
+           drawDigitAt(3,22,left_bonus) ;
+         }
+       }
+       if (ticks_enemy==0) { // Ограничения по тактам
          int8_t dx=0 ;
          int8_t dy=0 ;
          if (playerx<enemyx) dx=-1 ;
          if (playerx>enemyx) dx=1 ;
          if (playery<enemyy) dy=-1 ;
          if (playery>enemyy) dy=1 ;
+
          moveEnemy(dx,dy) ;
          if ((iabs(playerx-enemyx)<2)&&(iabs(playery-enemyy)<2)) {
            drawCharAt(enemyx,enemyy,SPACE) ;
@@ -192,9 +225,24 @@ void main()
            drawCharAt(enemyx,enemyy,ENEMY) ;
          }
        }
+       if (ticks_common==0) { // Ограничения по тактам
+         if (left_bonus>0) {
+           left_bonus-- ;
+           if (left_bonus==0) {
+             T_player = 2000 ;
+             drawCharAt(3,22,040) ;
+           }
+           else
+             drawDigitAt(3,22,left_bonus) ;
+         }
+       }
        if (key==3) break ; // Выход по КТ
-       ticks++ ;
-       if (ticks>2000) ticks=0 ;
+       ticks_common++ ;
+       ticks_player++ ;
+       ticks_enemy++ ;
+       if (ticks_common>5000) ticks_common=0 ;
+       if (ticks_player>T_player) ticks_player=0 ;
+       if (ticks_enemy>T_enemy) ticks_enemy=0 ;
     }
     EMT_14() ;
 }
