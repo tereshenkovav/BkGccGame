@@ -44,6 +44,17 @@ inline void EMT_24(uint8_t x, uint8_t y)
     );
 }
 
+// Вывод строки по умолчанию с нулем на конце
+inline void EMT_20(const char * str)
+{
+    asm volatile (
+        "mov %0, r1\n\t"
+        "mov $0, r2\n\t"
+        "emt 020\n"
+        : : "r" (str): "r1","r2","cc"
+    );
+}
+
 // Запрет на прерывание клавиатуры
 inline void DenyKeyboardInterrupt()
 {
@@ -128,6 +139,8 @@ const uint8_t SIZEY = 20 ;
 const uint8_t SPAWNX0 = 1 ;
 const uint8_t SPAWNY0 = 1 ;
 
+const uint8_t SPEEDUP_POS_X = 10 ;
+
 void newEnemy() {
    enemyx = SPAWNX0 ;
    enemyy = SPAWNY0 ;
@@ -153,6 +166,12 @@ void drawDigitAt(uint8_t x, uint8_t y, uint8_t d) {
   setColor(Green) ;
   EMT_24(x,y) ;
   EMT_16(060+d) ;
+}
+
+void drawStringAt(uint8_t x, uint8_t y, const char * str) {
+  setColor(Green) ;
+  EMT_24(x,y) ;
+  EMT_20(str) ;
 }
 
 uint8_t iabs(int8_t v) {
@@ -184,7 +203,10 @@ void main()
     EMT_16(0246) ;
     for (int i=BORDER; i<=SIZEX; i++) EMT_16(0265) ;
     EMT_16(0271) ;
-    
+
+    // Вывод надписей
+    drawStringAt(1,SIZEY+2,"SPEEDUP:") ;
+
     newEnemy() ;
     playerx = 15 ;
     playery = 10 ;
@@ -228,7 +250,7 @@ void main()
            drawCharAt(bonusx,bonusy,BONUS) ;
            T_player = 5 ;
            left_bonus = 9 ;
-           drawDigitAt(3,22,left_bonus) ;
+           drawDigitAt(SPEEDUP_POS_X,SIZEY+2,left_bonus) ;
          }
        }
        if (ticks_enemy==0) { // Ограничения по тактам
@@ -251,10 +273,10 @@ void main()
            left_bonus-- ;
            if (left_bonus==0) {
              T_player = 10 ;
-             drawCharAt(3,22,040) ;
+             drawCharAt(SPEEDUP_POS_X,SIZEY+2,040) ;
            }
            else
-             drawDigitAt(3,22,left_bonus) ;
+             drawDigitAt(SPEEDUP_POS_X,SIZEY+2,left_bonus) ;
          }
        }
        if (key==3) break ; // Выход по КТ
