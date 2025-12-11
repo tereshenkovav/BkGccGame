@@ -82,6 +82,17 @@ inline uint8_t keyHolded()
     return readWord(0177662) ;
 }
 
+inline void startTimer(uint16_t ticks)
+{
+    writeWord(0177706,ticks) ; // Длительность фрейма// (3777 - примерно 10 FPS)
+    writeWord(0177712,024) ; // Разрешаем счет и индикацию
+}
+
+inline void waitFrameEnd()
+{
+    while ((readWord(0177712) & 0200)==0) ; // Ждем таймера
+}
+
 // Тип цвета и значения цветов для псевдографики
 enum BkColor { Black=0, Red=1, Green=2, Blue=3 } ;
 
@@ -192,10 +203,12 @@ void main()
     uint16_t ticks_player = 0 ;
     uint8_t left_bonus = 0 ;
 
-    T_enemy = 2000 ;
-    T_player = 2000 ;
+    T_enemy = 10 ;
+    T_player = 10 ;
 
     for (;;) {
+       startTimer(03777) ; // 03777 - примерно 0.1 с
+
        // Проверка нажатия
        uint8_t key = keyHolded() ;
        if (ticks_player==0) { // Ограничения по тактам
@@ -213,7 +226,7 @@ void main()
            bonusy = SIZEY-bonusy ;
            setColor(Blue) ;
            drawCharAt(bonusx,bonusy,BONUS) ;
-           T_player = 1000 ;
+           T_player = 5 ;
            left_bonus = 9 ;
            drawDigitAt(3,22,left_bonus) ;
          }
@@ -237,7 +250,7 @@ void main()
          if (left_bonus>0) {
            left_bonus-- ;
            if (left_bonus==0) {
-             T_player = 2000 ;
+             T_player = 10 ;
              drawCharAt(3,22,040) ;
            }
            else
@@ -248,9 +261,11 @@ void main()
        ticks_common++ ;
        ticks_player++ ;
        ticks_enemy++ ;
-       if (ticks_common>5000) ticks_common=0 ;
+       if (ticks_common>10) ticks_common=0 ;
        if (ticks_player>T_player) ticks_player=0 ;
        if (ticks_enemy>T_enemy) ticks_enemy=0 ;
+
+       waitFrameEnd() ;
     }
     EMT_14() ;
 }
