@@ -54,33 +54,41 @@ inline void DenyKeyboardInterrupt()
     );
 }
 
+inline uint16_t readWord(uint16_t addr)
+{
+    uint16_t res;
+    asm volatile (
+        "mov %1, r0\n\t"
+        "mov (r0),%0\n"
+        : "=r" (res) : "r" (addr): "r0","cc"
+    );
+    return res ;
+}
+
+inline uint16_t writeWord(uint16_t addr, uint16_t value)
+{
+    uint16_t res;
+    asm volatile (
+        "mov %1, r0\n\t"
+        "mov %0, (r0)\n"
+        : : "r" (value), "r" (addr): "r0","cc"
+    );
+    return res ;
+}
+
 inline uint8_t keyHolded()
 {
-    uint8_t rv;
-    asm volatile (
-        "mov $0177716,r0\n"
-        "mov (r0),%0\n"
-        : "=r" (rv): : "r0","cc"
-    );
-
-    if ((rv & 0100)!=0) return 0 ;
-
-    asm volatile (
-        "mov $0177662,r0\n"
-        "mov (r0),%0\n"
-        : "=r" (rv): : "r0","cc"
-    );
-    return rv;
+    if ((readWord(0177716) & 0100)!=0) return 0 ;
+    return readWord(0177662) ;
 }
 
 // Тип цвета и значения цветов для псевдографики
 enum BkColor { Black=0, Red=1, Green=2, Blue=3 } ;
-const uint16_t colors[4] = { 0, 0177777, 0125252, 052525 } ;
 
 // Установка цвета переднего плана
 void setColor(enum BkColor bkcolor) {
-  const uint16_t CELL_COLOR = 0214 ;
-  *((uint16_t *)CELL_COLOR)=colors[bkcolor];
+  const uint16_t colors[4] = { 0, 0177777, 0125252, 052525 } ;
+  writeWord(0214,colors[bkcolor]) ;
 }
 
 void drawCharAt(uint8_t x, uint8_t y, char c) {
