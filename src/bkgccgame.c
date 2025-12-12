@@ -76,15 +76,13 @@ inline uint16_t readWord(uint16_t addr)
     return res ;
 }
 
-inline uint16_t writeWord(uint16_t addr, uint16_t value)
+inline void writeWord(uint16_t addr, uint16_t value)
 {
-    uint16_t res;
     asm volatile (
         "mov %1, r0\n\t"
         "mov %0, (r0)\n"
         : : "r" (value), "r" (addr): "r0","cc"
     );
-    return res ;
 }
 
 inline uint8_t keyHolded()
@@ -120,35 +118,22 @@ void drawCharAt(uint8_t x, uint8_t y, char c) {
 
 uint16_t seed ;
 
+inline uint16_t XOR(uint16_t v1, uint16_t v2) {
+    asm volatile (
+        "mov %2, r0\n\t"
+        "xor %1, r0\n\t"
+        "mov r0,%0\n"
+        : "=r" (v1) : "r" (v1), "r" (v2): "r0","cc"
+    );
+    return v1 ;
+}
+
 // Черновая процедура генерации числа в байте от 0 до d-1
 // XOR используем через ассемблер, можно сделать функцию ^ для линкера
 uint8_t genRndByByte(uint8_t d) {
-  uint16_t tek = seed << 7;
-
-    asm volatile (
-        "mov %2, r0\n\t"
-        "xor %1, r0\n\t"
-        "mov r0,%0\n"
-        : "=r" (seed) : "r" (seed), "r" (tek): "r0","cc"
-    );
-
-  tek = seed >> 9;
-
-    asm volatile (
-        "mov %2, r0\n\t"
-        "xor %1, r0\n\t"
-        "mov r0,%0\n"
-        : "=r" (seed) : "r" (seed), "r" (tek): "r0","cc"
-    );
-
-  tek = seed << 8;
-
-    asm volatile (
-        "mov %2, r0\n\t"
-        "xor %1, r0\n\t"
-        "mov r0,%0\n"
-        : "=r" (seed) : "r" (seed), "r" (tek): "r0","cc"
-    );
+  seed = XOR(seed, seed << 7);
+  seed = XOR(seed, seed >> 9);
+  seed = XOR(seed, seed << 8);
 
   uint8_t v = seed ;
   while (v>=d) v-=d ;
