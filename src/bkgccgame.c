@@ -118,13 +118,58 @@ void drawCharAt(uint8_t x, uint8_t y, char c) {
   EMT_16(c) ;
 }
 
+uint16_t seed ;
+
+// Черновая процедура генерации числа в байте от 0 до d-1
+// XOR используем через ассемблер, можно сделать функцию ^ для линкера
+uint8_t genRndByByte(uint8_t d) {
+  uint16_t tek = seed << 7;
+
+    asm volatile (
+        "mov %2, r0\n\t"
+        "xor %1, r0\n\t"
+        "mov r0,%0\n"
+        : "=r" (seed) : "r" (seed), "r" (tek): "r0","cc"
+    );
+
+  tek = seed >> 9;
+
+    asm volatile (
+        "mov %2, r0\n\t"
+        "xor %1, r0\n\t"
+        "mov r0,%0\n"
+        : "=r" (seed) : "r" (seed), "r" (tek): "r0","cc"
+    );
+
+  tek = seed << 8;
+
+    asm volatile (
+        "mov %2, r0\n\t"
+        "xor %1, r0\n\t"
+        "mov r0,%0\n"
+        : "=r" (seed) : "r" (seed), "r" (tek): "r0","cc"
+    );
+
+  uint8_t v = seed ;
+  while (v>=d) v-=d ;
+  return v ;
+}
+
 // Функции логики
+enum BonusType { btNone=0, btSpeedUp=1 } ;
+
+struct Bonus {
+  uint8_t x ;
+  uint8_t y ;
+  enum BonusType t ;
+};
+
+const uint16_t MAXBONUS = 16 ;
+struct Bonus bonuses[16] ;
 uint8_t enemyx ;
 uint8_t enemyy ;
 uint8_t playerx ;
 uint8_t playery ;
-uint8_t bonusx ;
-uint8_t bonusy ;
 uint16_t T_enemy ;
 uint16_t T_player ;
 
@@ -145,6 +190,16 @@ const uint8_t GAMETIME_POS_X = 26 ;
 void newEnemy() {
    enemyx = SPAWNX0 ;
    enemyy = SPAWNY0 ;
+}
+
+uint16_t newBonus(enum BonusType t) {
+   for (uint16_t i=0; i<MAXBONUS; i++)
+     if (bonuses[i].t==btNone) {
+       bonuses[i].x=BORDER+genRndByByte(SIZEX) ;
+       bonuses[i].y=BORDER+genRndByByte(SIZEY) ;
+       bonuses[i].t=t ;
+       return i;
+     }
 }
 
 void movePlayer(int8_t dx, int8_t dy) {
@@ -176,7 +231,6 @@ void DivMod10(uint16_t v, uint16_t r, uint16_t * d, uint16_t * m) {
   }
   *m = v ;
 }
-
 
 void drawUIntAt(uint8_t x, uint8_t y, uint16_t v) {
   const uint16_t D10[4] = { 10000, 1000, 100, 10 } ;
@@ -215,9 +269,13 @@ void main()
     //Запрещаем прерывания от клавиатуры, чтобы не мешало игре
     DenyKeyboardInterrupt() ;
 
+    drawStringAt(0,0,"PRESS ENTER TO START") ;
+    seed=0 ;
+    while (keyHolded()!=012) seed++ ;
+
     // Рисование рамки
     setColor(Green) ;
-    EMT_16(0252) ;
+    drawCharAt(0,0,0252) ;
     for (int i=BORDER; i<=SIZEX; i++) EMT_16(0265) ;
     EMT_16(0243) ;
 
@@ -232,13 +290,17 @@ void main()
 
     // Вывод надписей
     drawStringAt(1,SIZEY+2,"SPEEDUP:") ;
-    drawStringAt(20,SIZEY+2,"TIME:") ;
+    drawStringAt(19,SIZEY+2,"SCORE:") ;
 
     newEnemy() ;
     playerx = 15 ;
     playery = 10 ;
-    bonusx = 25 ;
-    bonusy = 17 ;
+
+    for (uint16_t i=0; i<MAXBONUS; i++)
+      bonuses[i].t = btNone ;
+    newBonus(btSpeedUp) ;
+    newBonus(btSpeedUp) ;
+    newBonus(btSpeedUp) ;
 
     uint16_t gametime = 0 ;
 
@@ -247,7 +309,9 @@ void main()
     setColor(Red) ;
     drawCharAt(enemyx,enemyy,ENEMY) ;
     setColor(Blue) ;
-    drawCharAt(bonusx,bonusy,BONUS) ;
+    for (uint16_t i=0; i<MAXBONUS; i++)
+      if (bonuses[i].y!=btNone)
+        drawCharAt(bonuses[i].x,bonuses[i].y,BONUS) ;
 
     uint16_t ticks_common = 0 ;
     uint16_t ticks_enemy = 0 ;
@@ -274,12 +338,14 @@ void main()
            if (playery>BORDER) movePlayer(0,-1) ;
          if (key==033) // Вниз
            if (playery<=SIZEY-BORDER) movePlayer(0,1) ;
-         if ((playerx==bonusx)&&(playery==bonusy)) {
-           // Перекидывание бонуса на другой конец доски вместо рандома
-           bonusx = SIZEX-bonusx ;
-           bonusy = SIZEY-bonusy ;
+
+         for (uint16_t i=0; i<MAXBONUS; i++)
+           if (bonuses[i].t!=btNone)
+             if ((playerx==bonuses[i].x)&&(playery==bonuses[i].y)) {
+           bonuses[i].t=btNone ;
+           uint16_t idx = newBonus(btSpeedUp) ;
            setColor(Blue) ;
-           drawCharAt(bonusx,bonusy,BONUS) ;
+           drawCharAt(bonuses[idx].x,bonuses[idx].y,BONUS) ;
            T_player = 5 ;
            left_bonus = 9 ;
            setColor(Green) ;
@@ -313,7 +379,7 @@ void main()
              drawDigitAt(SPEEDUP_POS_X,SIZEY+2,left_bonus) ;
            }
          }
-         gametime++ ;
+         gametime+=10 ;
          setColor(Green) ;
          drawUIntAt(GAMETIME_POS_X,SIZEY+2,gametime) ;
        }
