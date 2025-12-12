@@ -156,7 +156,7 @@ uint8_t genRndByByte(uint8_t d) {
 }
 
 // Функции логики
-enum BonusType { btNone=0, btSpeedUp=1, btScore=2 } ;
+enum BonusType { btNone=0, btSpeedUp=1, btScore=2, btShield=3 } ;
 
 struct Bonus {
   uint8_t x ;
@@ -164,7 +164,7 @@ struct Bonus {
   enum BonusType t ;
 };
 
-const char BONUS_CHARS[3] = { 0, 053, 052 } ;
+const char BONUS_CHARS[4] = { 0, 053, 052, 045 } ;
 
 const uint16_t MAXBONUS = 16 ;
 struct Bonus bonuses[16] ;
@@ -185,7 +185,8 @@ const uint8_t SIZEY = 20 ;
 const uint8_t SPAWNX0 = 1 ;
 const uint8_t SPAWNY0 = 1 ;
 
-const uint8_t SPEEDUP_POS_X = 10 ;
+const uint8_t SPEEDUP_POS_X = 9 ;
+const uint8_t SHIELD_POS_X = 18 ;
 const uint8_t SCORE_POS_X = 26 ;
 
 void newEnemy() {
@@ -291,7 +292,8 @@ void main()
 
     // Вывод надписей
     drawStringAt(1,SIZEY+2,"SPEEDUP:") ;
-    drawStringAt(19,SIZEY+2,"SCORE:") ;
+    drawStringAt(11,SIZEY+2,"SHIELD:") ;
+    drawStringAt(20,SIZEY+2,"SCORE:") ;
 
     newEnemy() ;
     playerx = 15 ;
@@ -305,6 +307,9 @@ void main()
     newBonus(btScore) ;
     newBonus(btScore) ;
     newBonus(btScore) ;
+    newBonus(btShield) ;
+    newBonus(btShield) ;
+    newBonus(btShield) ;
 
     uint16_t score = 0 ;
 
@@ -320,7 +325,8 @@ void main()
     uint16_t ticks_common = 0 ;
     uint16_t ticks_enemy = 0 ;
     uint16_t ticks_player = 0 ;
-    uint8_t left_bonus = 0 ;
+    uint8_t left_bonus_speed = 0 ;
+    uint8_t left_bonus_shield = 0 ;
 
     T_enemy = 10 ;
     T_player = 10 ;
@@ -349,14 +355,17 @@ void main()
                enum BonusType bt = bonuses[i].t ;
                if (bt==btSpeedUp) {
                  T_player = 5 ;
-                 left_bonus = 9 ;
+                 left_bonus_speed = 9 ;
                  setColor(Green) ;
-                 drawDigitAt(SPEEDUP_POS_X,SIZEY+2,left_bonus) ;
+                 drawDigitAt(SPEEDUP_POS_X,SIZEY+2,left_bonus_speed) ;
                }
-               if (bt==btScore) {
+               if (bt==btShield) {
+                 left_bonus_shield = 9 ;
+                 setColor(Green) ;
+                 drawDigitAt(SHIELD_POS_X,SIZEY+2,left_bonus_shield) ;
+               }
+               if (bt==btScore)
                  score+=100 ;
-                 drawDigitAt(SPEEDUP_POS_X,SIZEY+2,left_bonus) ;
-               }
                bonuses[i].t=btNone ;
                uint16_t idx = newBonus(bt) ;
                setColor(Blue) ;
@@ -373,21 +382,40 @@ void main()
 
          moveEnemy(dx,dy) ;
          if ((iabs(playerx-enemyx)<2)&&(iabs(playery-enemyy)<2)) {
-           setColor(Red) ;
-           drawStringAt(1,SIZEY+3,"GAMEOVER, PRESS ENTER") ;
-           break ;
+           if (left_bonus_shield==0) {
+             setColor(Red) ;
+             drawStringAt(1,SIZEY+3,"GAMEOVER, PRESS ENTER") ;
+             break ;
+           }
+           else {
+             score+=50 ;
+             drawCharAt(enemyx,enemyy,SPACE) ;
+             newEnemy() ;
+             setColor(Red) ;
+             drawCharAt(enemyx,enemyy,ENEMY) ;
+           }
          }
        }
        if (ticks_common==0) { // Ежесекундная процедура
-         if (left_bonus>0) {
-           left_bonus-- ;
-           if (left_bonus==0) {
+         if (left_bonus_speed>0) {
+           left_bonus_speed-- ;
+           if (left_bonus_speed==0) {
              T_player = 10 ;
              drawCharAt(SPEEDUP_POS_X,SIZEY+2,040) ;
            }
            else {
              setColor(Green) ;
-             drawDigitAt(SPEEDUP_POS_X,SIZEY+2,left_bonus) ;
+             drawDigitAt(SPEEDUP_POS_X,SIZEY+2,left_bonus_speed) ;
+           }
+         }
+         if (left_bonus_shield>0) {
+           left_bonus_shield-- ;
+           if (left_bonus_shield==0) {
+             drawCharAt(SHIELD_POS_X,SIZEY+2,040) ;
+           }
+           else {
+             setColor(Green) ;
+             drawDigitAt(SHIELD_POS_X,SIZEY+2,left_bonus_shield) ;
            }
          }
          score+=10 ;
