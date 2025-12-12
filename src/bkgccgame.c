@@ -140,6 +140,7 @@ const uint8_t SPAWNX0 = 1 ;
 const uint8_t SPAWNY0 = 1 ;
 
 const uint8_t SPEEDUP_POS_X = 10 ;
+const uint8_t GAMETIME_POS_X = 26 ;
 
 void newEnemy() {
    enemyx = SPAWNX0 ;
@@ -163,13 +164,38 @@ void moveEnemy(int8_t dx, int8_t dy) {
 }
 
 void drawDigitAt(uint8_t x, uint8_t y, uint8_t d) {
-  setColor(Green) ;
   EMT_24(x,y) ;
   EMT_16(060+d) ;
 }
 
+void DivMod10(uint16_t v, uint16_t r, uint16_t * d, uint16_t * m) {
+  *d = 0 ;
+  while (v>=r) {
+    (*d)++ ;
+    v-=r ;
+  }
+  *m = v ;
+}
+
+
+void drawUIntAt(uint8_t x, uint8_t y, uint16_t v) {
+  const uint16_t D10[4] = { 10000, 1000, 100, 10 } ;
+  static char str[6] ;
+  str[5]=0 ;
+  static uint16_t d ;
+  static uint16_t m ;
+  for (uint8_t i = 0; i<4; i++) {
+    DivMod10(v,D10[i],&d,&m) ;
+    str[i]=060+d ;
+    v=m ;
+  }
+  str[4]=060+v ;
+
+  EMT_24(x,y) ;
+  EMT_20(str) ;
+}
+
 void drawStringAt(uint8_t x, uint8_t y, const char * str) {
-  setColor(Green) ;
   EMT_24(x,y) ;
   EMT_20(str) ;
 }
@@ -206,12 +232,15 @@ void main()
 
     // Вывод надписей
     drawStringAt(1,SIZEY+2,"SPEEDUP:") ;
+    drawStringAt(20,SIZEY+2,"TIME:") ;
 
     newEnemy() ;
     playerx = 15 ;
     playery = 10 ;
     bonusx = 25 ;
     bonusy = 17 ;
+
+    uint16_t gametime = 0 ;
 
     setColor(Green) ;
     drawCharAt(playerx,playery,HERO) ;
@@ -227,6 +256,9 @@ void main()
 
     T_enemy = 10 ;
     T_player = 10 ;
+
+    setColor(Green) ;
+    drawUIntAt(GAMETIME_POS_X,SIZEY+2,gametime) ;
 
     for (;;) {
        startTimer(03777) ; // 03777 - примерно 0.1 с
@@ -250,6 +282,7 @@ void main()
            drawCharAt(bonusx,bonusy,BONUS) ;
            T_player = 5 ;
            left_bonus = 9 ;
+           setColor(Green) ;
            drawDigitAt(SPEEDUP_POS_X,SIZEY+2,left_bonus) ;
          }
        }
@@ -263,21 +296,26 @@ void main()
 
          moveEnemy(dx,dy) ;
          if ((iabs(playerx-enemyx)<2)&&(iabs(playery-enemyy)<2)) {
-           drawCharAt(enemyx,enemyy,SPACE) ;
-           newEnemy() ;
-           drawCharAt(enemyx,enemyy,ENEMY) ;
+           setColor(Red) ;
+           drawStringAt(1,SIZEY+3,"GAMEOVER, PRESS ENTER") ;
+           break ;
          }
        }
-       if (ticks_common==0) { // Ограничения по тактам
+       if (ticks_common==0) { // Ежесекундная процедура
          if (left_bonus>0) {
            left_bonus-- ;
            if (left_bonus==0) {
              T_player = 10 ;
              drawCharAt(SPEEDUP_POS_X,SIZEY+2,040) ;
            }
-           else
+           else {
+             setColor(Green) ;
              drawDigitAt(SPEEDUP_POS_X,SIZEY+2,left_bonus) ;
+           }
          }
+         gametime++ ;
+         setColor(Green) ;
+         drawUIntAt(GAMETIME_POS_X,SIZEY+2,gametime) ;
        }
        if (key==3) break ; // Выход по КТ
        ticks_common++ ;
@@ -289,5 +327,6 @@ void main()
 
        waitFrameEnd() ;
     }
+    while (keyHolded()!=012) ;
     EMT_14() ;
 }
