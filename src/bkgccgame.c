@@ -85,6 +85,18 @@ inline void writeWord(uint16_t addr, uint16_t value)
     );
 }
 
+void ClearScreen()
+{
+    asm volatile (
+	"mov $040000,r0\n\t"
+	".l1_%=:\n\t"
+	"clr	(r0)+\n\t"
+	"cmp	r0,$0100000\n\t"
+        "bne	.l1_%=\n"
+        : : : "r0","cc"
+    );
+}
+
 inline uint8_t keyHolded()
 {
     if ((readWord(0177716) & 0100)!=0) return 0 ;
@@ -260,6 +272,9 @@ void main()
     seed=0 ;
     while (keyHolded()!=012) seed++ ;
 
+Game:
+    ClearScreen() ;
+
     // Рисование рамки
     setColor(Green) ;
     drawCharAt(0,0,0252) ;
@@ -407,7 +422,11 @@ void main()
          setColor(Green) ;
          drawUIntAt(SCORE_POS_X,SIZEY+2,score) ;
        }
-       if (key==3) break ; // Выход по КТ
+       if (key==3) { // Выход по КТ
+          setColor(Red) ;
+          drawStringAt(1,SIZEY+3,"GAMEOVER, PRESS ENTER") ;
+          break ;
+       }
        ticks_common++ ;
        ticks_player++ ;
        ticks_enemy++ ;
@@ -418,5 +437,5 @@ void main()
        waitFrameEnd() ;
     }
     while (keyHolded()!=012) ;
-    EMT_14() ;
+    goto Game ;
 }
