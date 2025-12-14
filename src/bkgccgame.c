@@ -140,16 +140,31 @@ inline uint16_t XOR(uint16_t v1, uint16_t v2) {
     return v1 ;
 }
 
-// Черновая процедура генерации числа в байте от 0 до d-1
+// Получение следующего seed
 // XOR используем через ассемблер, можно сделать функцию ^ для линкера
-uint8_t genRndByByte(uint8_t d) {
+uint16_t getNewSeed() {
   seed = XOR(seed, seed << 7);
   seed = XOR(seed, seed >> 9);
   seed = XOR(seed, seed << 8);
+  return seed ;
+}
 
-  uint8_t v = seed ;
+// Черновая процедура генерации числа в байте от 0 до d-1
+uint8_t genRndByByte(uint8_t d) {
+  uint8_t v = getNewSeed() ;
   while (v>=d) v-=d ;
   return v ;
+}
+
+// Узкоспециализированная процедура, которая возвращает случайное
+// от 0 до 2 в степени n-1 путем обрезки байта
+// Работает быстрее, чем основная, для малых n
+// Можно улучшить константами
+uint8_t genRndByByteN2(uint8_t n) {
+  uint8_t v = 1 ;
+  for (uint16_t i=1; i<n; i++)
+    v+=(1<<i) ;
+  return getNewSeed() & v ;
 }
 
 // Функции логики
@@ -179,16 +194,17 @@ const char SPACE = 040 ;
 const uint8_t BORDER = 1 ;
 const uint8_t SIZEX = 30 ;
 const uint8_t SIZEY = 20 ;
-const uint8_t SPAWNX0 = 1 ;
-const uint8_t SPAWNY0 = 1 ;
+const uint8_t SPAWNX[4] = {BORDER,SIZEX,BORDER,SIZEX} ;
+const uint8_t SPAWNY[4] = {BORDER,BORDER,SIZEY,SIZEY} ;
 
 const uint8_t SPEEDUP_POS_X = 9 ;
 const uint8_t SHIELD_POS_X = 18 ;
 const uint8_t SCORE_POS_X = 26 ;
 
 void newEnemy() {
-   enemyx = SPAWNX0 ;
-   enemyy = SPAWNY0 ;
+   uint8_t idx = genRndByByteN2(2) ;
+   enemyx = SPAWNX[idx] ;
+   enemyy = SPAWNY[idx] ;
 }
 
 uint16_t newBonus(enum BonusType t) {
