@@ -167,6 +167,14 @@ uint8_t genRndByByteN2(uint8_t n) {
   return getNewSeed() & v ;
 }
 
+// Константы для клавиш
+const char KEY_ENTER = 012 ;
+const char KEY_LEFT = 010 ;
+const char KEY_RIGHT = 031 ;
+const char KEY_UP = 032 ;
+const char KEY_DOWN = 033 ;
+const char KEY_KT = 03 ;
+
 // Функции логики
 enum BonusType { btNone=0, btSpeedUp=1, btScore=2, btShield=3 } ;
 
@@ -200,6 +208,15 @@ const uint8_t SPAWNY[4] = {BORDER,BORDER,SIZEY,SIZEY} ;
 const uint8_t SPEEDUP_POS_X = 9 ;
 const uint8_t SHIELD_POS_X = 18 ;
 const uint8_t SCORE_POS_X = 26 ;
+
+const uint16_t INC_SCORE_BY_BONUS = 100 ;
+const uint16_t INC_SCORE_BY_KILLENEMY = 50 ;
+const uint16_t INC_SCORE_BY_ONESEC = 10 ;
+
+const uint16_t LIFETIME_FOR_BONUS = 9 ;
+const uint16_t MOVE_PERIOD_ENEMY = 10 ;
+const uint16_t MOVE_PERIOD_PLAYER = 10 ;
+const uint16_t MOVE_PERIOD_PLAYER_FAST = 5 ;
 
 void newEnemy() {
    uint8_t idx = genRndByByteN2(2) ;
@@ -256,7 +273,7 @@ void moveEnemy(int8_t dx, int8_t dy) {
 
 void drawDigitAt(uint8_t x, uint8_t y, uint8_t d) {
   EMT_24(x,y) ;
-  EMT_16(060+d) ;
+  EMT_16('0'+d) ;
 }
 
 void DivMod10(uint16_t v, uint16_t r, uint16_t * d, uint16_t * m) {
@@ -276,10 +293,10 @@ void drawUIntAt(uint8_t x, uint8_t y, uint16_t v) {
   static uint16_t m ;
   for (uint8_t i = 0; i<4; i++) {
     DivMod10(v,D10[i],&d,&m) ;
-    str[i]=060+d ;
+    str[i]='0'+d ;
     v=m ;
   }
-  str[4]=060+v ;
+  str[4]='0'+v ;
 
   EMT_24(x,y) ;
   EMT_20(str) ;
@@ -307,7 +324,7 @@ void main()
 
     drawStringAt(0,0,"PRESS ENTER TO START") ;
     seed=0 ;
-    while (keyHolded()!=012) seed++ ;
+    while (keyHolded()!=KEY_ENTER) seed++ ;
 
 Game:
     ClearScreen() ;
@@ -365,8 +382,8 @@ Game:
     uint8_t left_bonus_speed = 0 ;
     uint8_t left_bonus_shield = 0 ;
 
-    T_enemy = 10 ;
-    T_player = 10 ;
+    T_enemy = MOVE_PERIOD_ENEMY ;
+    T_player = MOVE_PERIOD_PLAYER ;
 
     setColor(Green) ;
     drawUIntAt(SCORE_POS_X,SIZEY+2,score) ;
@@ -377,31 +394,31 @@ Game:
        // Проверка нажатия
        uint8_t key = keyHolded() ;
        if (ticks_player==0) { // Ограничения по тактам
-         if (key==010) // Влево
+         if (key==KEY_LEFT)
            if (playerx>BORDER) movePlayer(-1,0) ;
-         if (key==031) // Вправо
+         if (key==KEY_RIGHT)
            if (playerx<=SIZEX-BORDER) movePlayer(1,0) ;
-         if (key==032) // Вверх
+         if (key==KEY_UP)
            if (playery>BORDER) movePlayer(0,-1) ;
-         if (key==033) // Вниз
+         if (key==KEY_DOWN)
            if (playery<=SIZEY-BORDER) movePlayer(0,1) ;
 
          uint16_t idx = getBonusIdxAt(playerx,playery) ;
          if (idx!=MAXBONUS) {
                enum BonusType bt = bonuses[idx].t ;
                if (bt==btSpeedUp) {
-                 T_player = 5 ;
-                 left_bonus_speed = 9 ;
+                 T_player = MOVE_PERIOD_PLAYER_FAST ;
+                 left_bonus_speed = LIFETIME_FOR_BONUS ;
                  setColor(Green) ;
                  drawDigitAt(SPEEDUP_POS_X,SIZEY+2,left_bonus_speed) ;
                }
                if (bt==btShield) {
-                 left_bonus_shield = 9 ;
+                 left_bonus_shield = LIFETIME_FOR_BONUS ;
                  setColor(Green) ;
                  drawDigitAt(SHIELD_POS_X,SIZEY+2,left_bonus_shield) ;
                }
                if (bt==btScore)
-                 score+=100 ;
+                 score+=INC_SCORE_BY_BONUS ;
                bonuses[idx].t=btNone ;
                idx = newBonus(bt) ;
                setColor(Blue) ;
@@ -424,7 +441,7 @@ Game:
              break ;
            }
            else {
-             score+=50 ;
+             score+=INC_SCORE_BY_KILLENEMY ;
              // Перерисовка игрока или затирание монстра, по ситуации
              if ((enemyx==playerx)&&(enemyy==playery)) {
                setColor(Green) ;
@@ -442,8 +459,8 @@ Game:
          if (left_bonus_speed>0) {
            left_bonus_speed-- ;
            if (left_bonus_speed==0) {
-             T_player = 10 ;
-             drawCharAt(SPEEDUP_POS_X,SIZEY+2,040) ;
+             T_player = MOVE_PERIOD_PLAYER ;
+             drawCharAt(SPEEDUP_POS_X,SIZEY+2,SPACE) ;
            }
            else {
              setColor(Green) ;
@@ -453,18 +470,18 @@ Game:
          if (left_bonus_shield>0) {
            left_bonus_shield-- ;
            if (left_bonus_shield==0) {
-             drawCharAt(SHIELD_POS_X,SIZEY+2,040) ;
+             drawCharAt(SHIELD_POS_X,SIZEY+2,SPACE) ;
            }
            else {
              setColor(Green) ;
              drawDigitAt(SHIELD_POS_X,SIZEY+2,left_bonus_shield) ;
            }
          }
-         score+=10 ;
+         score+=INC_SCORE_BY_ONESEC ;
          setColor(Green) ;
          drawUIntAt(SCORE_POS_X,SIZEY+2,score) ;
        }
-       if (key==3) { // Выход по КТ
+       if (key==KEY_KT) {
           setColor(Red) ;
           drawStringAt(1,SIZEY+3,"GAMEOVER, PRESS ENTER") ;
           break ;
@@ -472,12 +489,13 @@ Game:
        ticks_common++ ;
        ticks_player++ ;
        ticks_enemy++ ;
+       // Число тактов связано с FPS=10 и устанавливается в таймере
        if (ticks_common>10) ticks_common=0 ;
        if (ticks_player>T_player) ticks_player=0 ;
        if (ticks_enemy>T_enemy) ticks_enemy=0 ;
 
        waitFrameEnd() ;
     }
-    while (keyHolded()!=012) ;
+    while (keyHolded()!=KEY_ENTER) ;
     goto Game ;
 }
