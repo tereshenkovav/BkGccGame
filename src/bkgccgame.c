@@ -214,9 +214,9 @@ const uint16_t INC_SCORE_BY_KILLENEMY = 50 ;
 const uint16_t INC_SCORE_BY_ONESEC = 10 ;
 
 const uint16_t LIFETIME_FOR_BONUS = 9 ;
-const uint16_t MOVE_PERIOD_ENEMY = 10 ;
-const uint16_t MOVE_PERIOD_PLAYER = 10 ;
-const uint16_t MOVE_PERIOD_PLAYER_FAST = 5 ;
+const uint16_t MOVE_PERIOD_ENEMY = 5 ;
+const uint16_t MOVE_PERIOD_PLAYER = 6 ;
+const uint16_t MOVE_PERIOD_PLAYER_FAST = 3 ;
 
 void newEnemy() {
    uint8_t idx = genRndByByteN2(2) ;
@@ -322,7 +322,17 @@ void main()
     //Запрещаем прерывания от клавиатуры, чтобы не мешало игре
     DenyKeyboardInterrupt() ;
 
-    drawStringAt(0,0,"PRESS ENTER TO START") ;
+    ClearScreen() ;
+    setColor(Green) ;
+    drawStringAt(5,2,"SIMPLE GAME PROTOTYPE,") ;
+    drawStringAt(5,3,"AVOID OF BUG AND") ;
+    drawStringAt(5,4,"GAIN MAX SCORES") ;
+    setColor(Blue) ;
+    drawStringAt(5,6,"* - SCORE BONUS") ;
+    drawStringAt(5,7,"+ - SPEED BONUS") ;
+    drawStringAt(5,8,"% - SHIELD BONUS") ;
+    setColor(Red) ;
+    drawStringAt(5,10,"PRESS ENTER TO START") ;
     seed=0 ;
     while (keyHolded()!=KEY_ENTER) seed++ ;
 
@@ -428,11 +438,14 @@ Game:
        if (ticks_enemy==0) { // Ограничения по тактам
          int8_t dx=0 ;
          int8_t dy=0 ;
-         if (playerx<enemyx) dx=-1 ;
-         if (playerx>enemyx) dx=1 ;
-         if (playery<enemyy) dy=-1 ;
-         if (playery>enemyy) dy=1 ;
-
+         if (iabs(playerx-enemyx)>iabs(playery-enemyy)) {
+           if (playerx<enemyx) dx=-1 ;
+           if (playerx>enemyx) dx=1 ;
+         }
+         else {
+           if (playery<enemyy) dy=-1 ;
+           if (playery>enemyy) dy=1 ;
+         }
          moveEnemy(dx,dy) ;
          if ((iabs(playerx-enemyx)<2)&&(iabs(playery-enemyy)<2)) {
            if (left_bonus_shield==0) {
