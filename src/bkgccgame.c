@@ -207,12 +207,28 @@ void newEnemy() {
    enemyy = SPAWNY[idx] ;
 }
 
+// Возврат MAXBONUS - означает, что нет индекса
+uint16_t getBonusIdxAt(uint8_t x, uint8_t y) {
+   for (uint16_t i=0; i<MAXBONUS; i++)
+     if (bonuses[i].t!=btNone)
+       if ((x==bonuses[i].x)&&(y==bonuses[i].y))
+         return i ;
+   return MAXBONUS ;
+}
+
 uint16_t newBonus(enum BonusType t) {
    for (uint16_t i=0; i<MAXBONUS; i++)
      if (bonuses[i].t==btNone) {
-       bonuses[i].x=BORDER+genRndByByte(SIZEX) ;
-       bonuses[i].y=BORDER+genRndByByte(SIZEY) ;
-       bonuses[i].t=t ;
+       while (1) {
+         uint8_t x = BORDER+genRndByByte(SIZEX) ;
+         uint8_t y = BORDER+genRndByByte(SIZEY) ;
+         if ((getBonusIdxAt(x,y)==MAXBONUS)&&((playerx!=x)||(playery!=y))) {
+           bonuses[i].x=x ;
+           bonuses[i].y=y ;
+           bonuses[i].t=t ;
+           break ;
+         }
+       }
        return i;
      }
 }
@@ -365,10 +381,9 @@ Game:
          if (key==033) // Вниз
            if (playery<=SIZEY-BORDER) movePlayer(0,1) ;
 
-         for (uint16_t i=0; i<MAXBONUS; i++)
-           if (bonuses[i].t!=btNone)
-             if ((playerx==bonuses[i].x)&&(playery==bonuses[i].y)) {
-               enum BonusType bt = bonuses[i].t ;
+         uint16_t idx = getBonusIdxAt(playerx,playery) ;
+         if (idx!=MAXBONUS) {
+               enum BonusType bt = bonuses[idx].t ;
                if (bt==btSpeedUp) {
                  T_player = 5 ;
                  left_bonus_speed = 9 ;
@@ -382,11 +397,11 @@ Game:
                }
                if (bt==btScore)
                  score+=100 ;
-               bonuses[i].t=btNone ;
-               uint16_t idx = newBonus(bt) ;
+               bonuses[idx].t=btNone ;
+               idx = newBonus(bt) ;
                setColor(Blue) ;
                drawCharAt(bonuses[idx].x,bonuses[idx].y,BONUS_CHARS[bonuses[idx].t]) ;
-             }
+         }
        }
        if (ticks_enemy==0) { // Ограничения по тактам
          int8_t dx=0 ;
