@@ -234,18 +234,23 @@ uint16_t newBonus(enum BonusType t) {
 }
 
 void movePlayer(int8_t dx, int8_t dy) {
-    setColor(Green) ;
     drawCharAt(playerx,playery,SPACE) ;
     playerx+=dx ;
     playery+=dy ;
+    setColor(Green) ;
     drawCharAt(playerx,playery,HERO) ;
 }
 
 void moveEnemy(int8_t dx, int8_t dy) {
-    setColor(Red) ;
     drawCharAt(enemyx,enemyy,SPACE) ;
+    uint16_t idx = getBonusIdxAt(enemyx,enemyy) ;
+    if (idx!=MAXBONUS) {
+      setColor(Blue) ;
+      drawCharAt(bonuses[idx].x,bonuses[idx].y,BONUS_CHARS[bonuses[idx].t]) ;
+    }
     enemyx+=dx ;
     enemyy+=dy ;
+    setColor(Red) ;
     drawCharAt(enemyx,enemyy,ENEMY) ;
 }
 
@@ -420,7 +425,13 @@ Game:
            }
            else {
              score+=50 ;
-             drawCharAt(enemyx,enemyy,SPACE) ;
+             // Перерисовка игрока или затирание монстра, по ситуации
+             if ((enemyx==playerx)&&(enemyy==playery)) {
+               setColor(Green) ;
+               drawCharAt(playerx,playery,HERO) ;
+             }
+             else
+               drawCharAt(enemyx,enemyy,SPACE) ;
              newEnemy() ;
              setColor(Red) ;
              drawCharAt(enemyx,enemyy,ENEMY) ;
