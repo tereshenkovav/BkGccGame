@@ -408,7 +408,8 @@ void MainGame() {
 
        // Проверка нажатия
        uint8_t key = keyHolded() ;
-       if (key!=lastkey) {
+       // Если новая клавиша нажата, не равная старой
+       if ((key!=0)&&(key!=lastkey)) {
          ticks_player = 0 ;
          lastkey=key ;
        }
