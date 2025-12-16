@@ -391,6 +391,7 @@ Game:
     uint16_t ticks_player = 0 ;
     uint8_t left_bonus_speed = 0 ;
     uint8_t left_bonus_shield = 0 ;
+    uint8_t lastkey = 0 ;
 
     T_enemy = MOVE_PERIOD_ENEMY ;
     T_player = MOVE_PERIOD_PLAYER ;
@@ -403,6 +404,10 @@ Game:
 
        // Проверка нажатия
        uint8_t key = keyHolded() ;
+       if (key!=lastkey) {
+         ticks_player = 0 ;
+         lastkey=key ;
+       }
        if (ticks_player==0) { // Ограничения по тактам
          if (key==KEY_LEFT)
            if (playerx>BORDER) movePlayer(-1,0) ;
