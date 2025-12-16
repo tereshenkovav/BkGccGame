@@ -184,15 +184,22 @@ struct Bonus {
   enum BonusType t ;
 };
 
+struct Enemy {
+  uint8_t x ;
+  uint8_t y ;
+  uint8_t exist ;
+};
+
 const char BONUS_CHARS[4] = { 0, 053, 052, 045 } ;
 
 const uint16_t MAXBONUS = 16 ;
+const uint16_t MAXENEMY = 4 ;
 struct Bonus bonuses[16] ;
-uint8_t enemyx ;
-uint8_t enemyy ;
+struct Enemy enemy[16] ;
 uint8_t playerx ;
 uint8_t playery ;
 uint16_t T_enemy ;
+uint16_t T_newenemy ;
 uint16_t T_player ;
 
 const char HERO = 0100 ;
@@ -209,6 +216,7 @@ const uint8_t SPEEDUP_POS_X = 9 ;
 const uint8_t SHIELD_POS_X = 18 ;
 const uint8_t SCORE_POS_X = 26 ;
 
+// Константы игрового баланса
 const uint16_t INC_SCORE_BY_BONUS = 100 ;
 const uint16_t INC_SCORE_BY_KILLENEMY = 50 ;
 const uint16_t INC_SCORE_BY_ONESEC = 10 ;
@@ -217,11 +225,18 @@ const uint16_t LIFETIME_FOR_BONUS = 9 ;
 const uint16_t MOVE_PERIOD_ENEMY = 5 ;
 const uint16_t MOVE_PERIOD_PLAYER = 6 ;
 const uint16_t MOVE_PERIOD_PLAYER_FAST = 3 ;
+const uint16_t PERIOD_NEW_ENEMY = 100 ;
 
-void newEnemy() {
+uint16_t newEnemy() {
    uint8_t idx = genRndByByteN2(2) ;
-   enemyx = SPAWNX[idx] ;
-   enemyy = SPAWNY[idx] ;
+   for (uint16_t i=0; i<MAXENEMY; i++)
+     if (!enemy[i].exist) {
+       enemy[i].x = SPAWNX[idx] ;
+       enemy[i].y = SPAWNY[idx] ;
+       enemy[i].exist=1 ;
+       return i ;
+     }
+   return MAXENEMY ;
 }
 
 // Возврат MAXBONUS - означает, что нет индекса
@@ -258,17 +273,17 @@ void movePlayer(int8_t dx, int8_t dy) {
     drawCharAt(playerx,playery,HERO) ;
 }
 
-void moveEnemy(int8_t dx, int8_t dy) {
-    drawCharAt(enemyx,enemyy,SPACE) ;
-    uint16_t idx = getBonusIdxAt(enemyx,enemyy) ;
+void moveEnemy(int16_t i, uint8_t dx, uint8_t dy) {
+    drawCharAt(enemy[i].x,enemy[i].y,SPACE) ;
+    uint16_t idx = getBonusIdxAt(enemy[i].x,enemy[i].y) ;
     if (idx!=MAXBONUS) {
       setColor(Blue) ;
       drawCharAt(bonuses[idx].x,bonuses[idx].y,BONUS_CHARS[bonuses[idx].t]) ;
     }
-    enemyx+=dx ;
-    enemyy+=dy ;
+    enemy[i].x+=dx ;
+    enemy[i].y+=dy ;
     setColor(Red) ;
-    drawCharAt(enemyx,enemyy,ENEMY) ;
+    drawCharAt(enemy[i].x,enemy[i].y,ENEMY) ;
 }
 
 void drawDigitAt(uint8_t x, uint8_t y, uint8_t d) {
@@ -327,7 +342,7 @@ void PrintMenu() {
 void PrintHelpAndWaitEnter() {
     ClearScreen() ;
     setColor(Green) ;
-    drawStringAt(2,3,"  GAME TASK - AVOID OF BUG") ;
+    drawStringAt(2,3,"  GAME TASK - AVOID OF BUGS") ;
     drawStringAt(2,4,"AND GAIN MAX SCORES.") ;
     drawStringAt(2,5,"  HOLD ARROW KEY FOR MOVING") ;
     drawStringAt(2,6,"AND COLLECT BLUE BONUSES.") ;
@@ -363,9 +378,12 @@ void MainGame() {
     drawStringAt(11,SIZEY+2,"SHIELD:") ;
     drawStringAt(20,SIZEY+2,"SCORE:") ;
 
-    newEnemy() ;
     playerx = 15 ;
     playery = 10 ;
+
+    for (uint16_t i=0; i<MAXENEMY; i++)
+      enemy[i].exist = 0 ;
+    newEnemy() ;
 
     for (uint16_t i=0; i<MAXBONUS; i++)
       bonuses[i].t = btNone ;
@@ -383,22 +401,28 @@ void MainGame() {
 
     setColor(Green) ;
     drawCharAt(playerx,playery,HERO) ;
+
     setColor(Red) ;
-    drawCharAt(enemyx,enemyy,ENEMY) ;
+    for (uint16_t i=0; i<MAXENEMY; i++)
+      if (enemy[i].exist)
+        drawCharAt(enemy[i].x,enemy[i].y,ENEMY) ;
+
     setColor(Blue) ;
     for (uint16_t i=0; i<MAXBONUS; i++)
-      if (bonuses[i].y!=btNone)
+      if (bonuses[i].t!=btNone)
         drawCharAt(bonuses[i].x,bonuses[i].y,BONUS_CHARS[bonuses[i].t]) ;
 
     uint16_t ticks_common = 0 ;
     uint16_t ticks_enemy = 0 ;
     uint16_t ticks_player = 0 ;
+    uint16_t ticks_newenemy = 0 ;
     uint8_t left_bonus_speed = 0 ;
     uint8_t left_bonus_shield = 0 ;
     uint8_t lastkey = 0 ;
 
     T_enemy = MOVE_PERIOD_ENEMY ;
     T_player = MOVE_PERIOD_PLAYER ;
+    T_newenemy = PERIOD_NEW_ENEMY ;
 
     setColor(Green) ;
     drawUIntAt(SCORE_POS_X,SIZEY+2,score) ;
@@ -446,37 +470,38 @@ void MainGame() {
          }
        }
        if (ticks_enemy==0) { // Ограничения по тактам
+        for (uint16_t i=0; i<MAXENEMY; i++)
+         if (enemy[i].exist) {
          int8_t dx=0 ;
          int8_t dy=0 ;
-         if (iabs(playerx-enemyx)>iabs(playery-enemyy)) {
-           if (playerx<enemyx) dx=-1 ;
-           if (playerx>enemyx) dx=1 ;
+         if (iabs(playerx-enemy[i].x)>iabs(playery-enemy[i].y)) {
+           if (playerx<enemy[i].x) dx=-1 ;
+           if (playerx>enemy[i].x) dx=1 ;
          }
          else {
-           if (playery<enemyy) dy=-1 ;
-           if (playery>enemyy) dy=1 ;
+           if (playery<enemy[i].y) dy=-1 ;
+           if (playery>enemy[i].y) dy=1 ;
          }
-         moveEnemy(dx,dy) ;
-         if ((iabs(playerx-enemyx)<2)&&(iabs(playery-enemyy)<2)) {
+         moveEnemy(i,dx,dy) ;
+         if ((iabs(playerx-enemy[i].x)<2)&&(iabs(playery-enemy[i].y)<2)) {
            if (left_bonus_shield==0) {
              setColor(Red) ;
              drawStringAt(1,SIZEY+3,"GAMEOVER, PRESS ENTER") ;
-             break ;
+             goto Finish ;
            }
            else {
              score+=INC_SCORE_BY_KILLENEMY ;
              // Перерисовка игрока или затирание монстра, по ситуации
-             if ((enemyx==playerx)&&(enemyy==playery)) {
+             if ((enemy[i].x==playerx)&&(enemy[i].y==playery)) {
                setColor(Green) ;
                drawCharAt(playerx,playery,HERO) ;
              }
              else
-               drawCharAt(enemyx,enemyy,SPACE) ;
-             newEnemy() ;
-             setColor(Red) ;
-             drawCharAt(enemyx,enemyy,ENEMY) ;
+               drawCharAt(enemy[i].x,enemy[i].y,SPACE) ;
+             enemy[i].exist=0 ;
            }
          }
+        }
        }
        if (ticks_common==0) { // Ежесекундная процедура
          if (left_bonus_speed>0) {
@@ -512,13 +537,22 @@ void MainGame() {
        ticks_common++ ;
        ticks_player++ ;
        ticks_enemy++ ;
+       ticks_newenemy++ ;
        // Число тактов связано с FPS=10 и устанавливается в таймере
        if (ticks_common>10) ticks_common=0 ;
        if (ticks_player>T_player) ticks_player=0 ;
        if (ticks_enemy>T_enemy) ticks_enemy=0 ;
+       if (ticks_newenemy>T_newenemy) {
+          ticks_newenemy=0 ;
+          setColor(Red) ;
+          uint16_t idx = newEnemy() ;
+          if (idx!=MAXENEMY)
+            drawCharAt(enemy[idx].x,enemy[idx].y,ENEMY) ;
+       }
 
        waitFrameEnd() ;
     }
+Finish:
     while (keyHolded()!=KEY_ENTER) ;
 }
 
