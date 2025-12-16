@@ -128,7 +128,7 @@ void drawCharAt(uint8_t x, uint8_t y, char c) {
   EMT_16(c) ;
 }
 
-uint16_t seed ;
+uint16_t seed = 0 ;
 
 inline uint16_t XOR(uint16_t v1, uint16_t v2) {
     asm volatile (
@@ -311,32 +311,36 @@ uint8_t iabs(int8_t v) {
   if (v<0) return -v ; else return v ;
 }
 
-void main()
-{
-    EMT_14() ;
-    // Режим 32 символа
-    EMT_16(0233) ;
-    // Скрытие курсора
-    EMT_16(0232) ;
-
-    //Запрещаем прерывания от клавиатуры, чтобы не мешало игре
-    DenyKeyboardInterrupt() ;
-
+void PrintMenu() {
     ClearScreen() ;
     setColor(Green) ;
-    drawStringAt(5,2,"SIMPLE GAME PROTOTYPE,") ;
-    drawStringAt(5,3,"AVOID OF BUG AND") ;
-    drawStringAt(5,4,"GAIN MAX SCORES") ;
-    setColor(Blue) ;
-    drawStringAt(5,6,"* - SCORE BONUS") ;
-    drawStringAt(5,7,"+ - SPEED BONUS") ;
-    drawStringAt(5,8,"% - SHIELD BONUS") ;
-    setColor(Red) ;
-    drawStringAt(5,10,"PRESS ENTER TO START") ;
-    seed=0 ;
-    while (keyHolded()!=KEY_ENTER) seed++ ;
+    drawStringAt(2,3,"BK-0010 GCC GAME EXAMPLE") ;
+    drawStringAt(5,6,"1 - START GAME") ;
+    drawStringAt(5,7,"2 - HELP") ;
+    drawStringAt(5,8,"0 - EXIT") ;
 
-Game:
+    drawStringAt(2,11,"ALEKSANDR V. TERESHENKOV") ;
+    drawStringAt(2,12,"github.com/tereshenkovav") ;
+    drawStringAt(2,13,"/BkGccGame") ;
+}
+
+void PrintHelpAndWaitEnter() {
+    ClearScreen() ;
+    setColor(Green) ;
+    drawStringAt(2,3,"  GAME TASK - AVOID OF BUG") ;
+    drawStringAt(2,4,"AND GAIN MAX SCORES.") ;
+    drawStringAt(2,5,"  HOLD ARROW KEY FOR MOVING") ;
+    drawStringAt(2,6,"AND COLLECT BLUE BONUSES.") ;
+    setColor(Blue) ;
+    drawStringAt(2,8,"* - INC SCORE") ;
+    drawStringAt(2,9,"+ - INC SPEED") ;
+    drawStringAt(2,10,"% - INVULNERABILITY") ;
+    setColor(Green) ;
+    drawStringAt(2,12,"PRESS ENTER TO MAIN MENU") ;
+    while (keyHolded()!=KEY_ENTER) ;
+}
+
+void MainGame() {
     ClearScreen() ;
 
     // Рисование рамки
@@ -515,5 +519,30 @@ Game:
        waitFrameEnd() ;
     }
     while (keyHolded()!=KEY_ENTER) ;
-    goto Game ;
+}
+
+void main()
+{
+    EMT_14() ;
+    // Режим 32 символа
+    EMT_16(0233) ;
+    // Скрытие курсора
+    EMT_16(0232) ;
+
+    //Запрещаем прерывания от клавиатуры, чтобы не мешало игре
+    DenyKeyboardInterrupt() ;
+
+    char key ;
+    while (1) {
+      PrintMenu() ;
+      do {
+        seed++ ;
+        key = keyHolded() ;
+      }
+      while (!((key=='0')||(key=='1')||(key=='2'))) ;
+      if (key=='1') MainGame() ;
+      if (key=='2') PrintHelpAndWaitEnter() ;
+      if (key=='0') break ;
+    }
+    EMT_14() ;
 }
