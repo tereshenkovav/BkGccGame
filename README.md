@@ -4,7 +4,7 @@
 на Си с ассемблерными вставками и собираемую в бинарный файл
 с помощью компилятора gcc для pdp-11.
 
-![BkGccGame](screen1.png)
+![BkGccGame](screen1.png) ![BkGccGame](screen2.png)
 
 ## Руководство по сборке
 
