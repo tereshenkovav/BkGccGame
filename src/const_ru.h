@@ -1,0 +1,27 @@
+const char * GAMETITLE = "πςινες ιηςω ξα GCC δμρ βλ-0010";
+const char * MENU_START = "1 - ξαώατψ ιηςυ";
+const char * MENU_SOUND = "2 - ϊχυλ: ";
+const char * MENU_JOY = "3 - δφοκστιλ: ";
+const char * MENU_HELP = "4 - πονούψ";
+const char * MENU_EXIT = "0 - χωθοδ";
+const char * TEXT_ON = "χλμ";
+const char * TEXT_OFF = "χωλμ";
+const char * TEXT_AUTHOR = "τεςεϋεξλοχ αμελσαξδς";
+const char * HELP0 = " ϊαδαώα ιηςω - ιϊβεηατψ φυλοχ";
+const char * HELP1 = "ι σοβςατψ ναλσινυν οώλοχ.";
+const char * HELP2 = " δχιηακτεσψ, υδεςφιχαρ στςεμλι";
+const char * HELP3 = "ι ποδβιςακτε ηομυβωε βοξυσω.";
+const char * HELP4 = "* - πμΰσ οώλι";
+const char * HELP5 = "+ - υχεμιώεξιε σλοςοστι";
+const char * HELP6 = "% - ξευρϊχινοστψ";
+const char * HELP7 = "ξαφνιτε χχοδ δμρ χωθοδα χ νεξΰ";
+const char * BONUS_SPEEDUP = "σλοςοστψ:";
+const char * BONUS_SHIELD = "ϊαύιτα:";
+const char * BONUS_SCORE = "οώλι:";
+const char * TEXT_GAMEOVER = "ιηςα ολοξώεξα, ξαφνιτε χχοδ";
+
+const uint8_t POS_TEXT_SOUND_ON_OFF = 15 ;
+const uint8_t POS_TEXT_BONUS_SHIELD = 12 ;
+const uint8_t POS_TEXT_BONUS_SCORE = 21 ;
+const uint8_t SPEEDUP_POS_X = 10 ;
+const uint8_t SHIELD_POS_X = 19 ;

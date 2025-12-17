@@ -2,6 +2,9 @@
 #ifdef GAMELANG_EN
 #include "const_en.h"
 #endif
+#ifdef GAMELANG_RU
+#include "const_ru.h"
+#endif
 
 // Ожидание клавиши
 inline char EMT_6()
@@ -226,8 +229,6 @@ const uint8_t SIZEY = 20 ;
 const uint8_t SPAWNX[4] = {BORDER,SIZEX,BORDER,SIZEX} ;
 const uint8_t SPAWNY[4] = {BORDER,BORDER,SIZEY,SIZEY} ;
 
-const uint8_t SPEEDUP_POS_X = 9 ;
-const uint8_t SHIELD_POS_X = 18 ;
 const uint8_t SCORE_POS_X = 26 ;
 
 // Константы игрового баланса
@@ -366,7 +367,7 @@ void PrintMenu() {
     drawStringAt(5,9,MENU_HELP) ;
     drawStringAt(5,10,MENU_EXIT) ;
 
-    drawStringAt(16,7,soundon?TEXT_ON:TEXT_OFF) ;
+    drawStringAt(POS_TEXT_SOUND_ON_OFF,7,soundon?TEXT_ON:TEXT_OFF) ;
     drawStringAt(19,8,joyon?TEXT_ON:TEXT_OFF) ;
 
     drawStringAt(2,13,TEXT_AUTHOR) ;
@@ -410,8 +411,8 @@ void MainGame() {
 
     // Вывод надписей
     drawStringAt(1,SIZEY+2,BONUS_SPEEDUP) ;
-    drawStringAt(11,SIZEY+2,BONUS_SHIELD) ;
-    drawStringAt(20,SIZEY+2,BONUS_SCORE) ;
+    drawStringAt(POS_TEXT_BONUS_SHIELD,SIZEY+2,BONUS_SHIELD) ;
+    drawStringAt(POS_TEXT_BONUS_SCORE,SIZEY+2,BONUS_SCORE) ;
 
     playerx = 15 ;
     playery = 10 ;

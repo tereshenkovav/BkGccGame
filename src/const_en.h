@@ -19,3 +19,9 @@ const char * BONUS_SPEEDUP = "SPEEDUP:";
 const char * BONUS_SHIELD = "INVULN:";
 const char * BONUS_SCORE = "SCORE:";
 const char * TEXT_GAMEOVER = "GAMEOVER, PRESS ENTER";
+
+const uint8_t POS_TEXT_SOUND_ON_OFF = 16 ;
+const uint8_t POS_TEXT_BONUS_SHIELD = 11 ;
+const uint8_t POS_TEXT_BONUS_SCORE = 20 ;
+const uint8_t SPEEDUP_POS_X = 9 ;
+const uint8_t SHIELD_POS_X = 18 ;
