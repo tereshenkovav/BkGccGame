@@ -1,196 +1,12 @@
 #include "stdint.h"
+#include "bk0010_rtl.h"
+
 #ifdef GAMELANG_EN
 #include "const_en.h"
 #endif
 #ifdef GAMELANG_RU
 #include "const_ru.h"
 #endif
-
-// Ожидание клавиши
-inline char EMT_6()
-{
-    char rv;
-    asm volatile (
-        "emt 06\n"
-        "mov r0, %0"
-        : "=r" (rv)
-    );
-
-    return rv;
-}
-
-// Установка вектора прерываний
-inline void EMT_14()
-{
-    asm volatile (
-        "emt 014\n"
-        : : : "cc"
-    );
-}
-
-
-// Вывод символа
-inline void EMT_16(char c)
-{
-    asm volatile (
-        "mov %0, r0\n\t"
-        "emt 016\n"
-        : : "r" (c) : "r0", "cc"
-    );
-}
-
-// Установка позиции курсора
-inline void EMT_24(uint8_t x, uint8_t y)
-{
-    asm volatile (
-        "mov %0, r1\n\t"
-        "mov %1, r2\n\t"
-        "emt 024\n"
-        : : "r" (x), "r" (y) : "r1","r2","cc"
-    );
-}
-
-// Вывод строки по умолчанию с нулем на конце
-inline void EMT_20(const char * str)
-{
-    asm volatile (
-        "mov %0, r1\n\t"
-        "mov $0, r2\n\t"
-        "emt 020\n"
-        : : "r" (str): "r1","r2","cc"
-    );
-}
-
-// Запрет на прерывание клавиатуры
-inline void DenyKeyboardInterrupt()
-{
-    asm (
-        "mov $0177660, r0\n\t"
-        "bis $0100, (r0)\n"
-        : : : "r0","cc"
-    );
-}
-
-inline uint16_t readWord(uint16_t addr)
-{
-    uint16_t res;
-    asm volatile (
-        "mov %1, r0\n\t"
-        "mov (r0),%0\n"
-        : "=r" (res) : "r" (addr): "r0","cc"
-    );
-    return res ;
-}
-
-inline void writeWord(uint16_t addr, uint16_t value)
-{
-    asm volatile (
-        "mov %1, r0\n\t"
-        "mov %0, (r0)\n"
-        : : "r" (value), "r" (addr): "r0","cc"
-    );
-}
-
-void ClearScreen()
-{
-    asm volatile (
-	"mov $040000,r0\n\t"
-	".l1_%=:\n\t"
-	"clr	(r0)+\n\t"
-	"cmp	r0,$0100000\n\t"
-        "bne	.l1_%=\n"
-        : : : "r0","cc"
-    );
-}
-
-inline uint8_t keyHolded()
-{
-    if ((readWord(0177716) & 0100)!=0) return 0 ;
-    return readWord(0177662) ;
-}
-
-inline void startTimer(uint16_t ticks)
-{
-    writeWord(0177706,ticks) ; // Длительность фрейма// (3777 - примерно 10 FPS)
-    writeWord(0177712,024) ; // Разрешаем счет и индикацию
-}
-
-inline void waitFrameEnd()
-{
-    while ((readWord(0177712) & 0200)==0) ; // Ждем таймера
-}
-
-// Тип цвета и значения цветов для псевдографики
-enum BkColor { Black=0, Red=1, Green=2, Blue=3 } ;
-
-// Установка цвета переднего плана
-void setColor(enum BkColor bkcolor) {
-  const uint16_t colors[4] = { 0, 0177777, 0125252, 052525 } ;
-  writeWord(0214,colors[bkcolor]) ;
-}
-
-void playSound(uint16_t len, uint16_t period) {
-  for (uint16_t i=0; i<len; i++) {
-    writeWord(0177716, 0100) ;
-    for (uint16_t j=0; j<period; j++)
-       asm volatile ("nop\n") ;
-    writeWord(0177716, 0) ;
-    for (uint16_t j=0; j<period; j++)
-       asm volatile ("nop\n") ;
-  }
-}
-
-void drawCharAt(uint8_t x, uint8_t y, char c) {
-  EMT_24(x,y) ;
-  EMT_16(c) ;
-}
-
-uint16_t seed = 0 ;
-
-inline uint16_t XOR(uint16_t v1, uint16_t v2) {
-    asm volatile (
-        "mov %2, r0\n\t"
-        "xor %1, r0\n\t"
-        "mov r0,%0\n"
-        : "=r" (v1) : "r" (v1), "r" (v2): "r0","cc"
-    );
-    return v1 ;
-}
-
-// Получение следующего seed
-// XOR используем через ассемблер, можно сделать функцию ^ для линкера
-uint16_t getNewSeed() {
-  seed = XOR(seed, seed << 7);
-  seed = XOR(seed, seed >> 9);
-  seed = XOR(seed, seed << 8);
-  return seed ;
-}
-
-// Черновая процедура генерации числа в байте от 0 до d-1
-uint8_t genRndByByte(uint8_t d) {
-  uint8_t v = getNewSeed() ;
-  while (v>=d) v-=d ;
-  return v ;
-}
-
-// Узкоспециализированная процедура, которая возвращает случайное
-// от 0 до 2 в степени n-1 путем обрезки байта
-// Работает быстрее, чем основная, для малых n
-// Можно улучшить константами
-uint8_t genRndByByteN2(uint8_t n) {
-  uint8_t v = 1 ;
-  for (uint16_t i=1; i<n; i++)
-    v+=(1<<i) ;
-  return getNewSeed() & v ;
-}
-
-// Константы для клавиш
-const char KEY_ENTER = 012 ;
-const char KEY_LEFT = 010 ;
-const char KEY_RIGHT = 031 ;
-const char KEY_UP = 032 ;
-const char KEY_DOWN = 033 ;
-const char KEY_KT = 03 ;
 
 // Функции логики
 enum BonusType { btNone=0, btSpeedUp=1, btScore=2, btShield=3 } ;
@@ -299,46 +115,6 @@ void moveEnemy(int16_t i, uint8_t dx, uint8_t dy) {
     enemy[i].y+=dy ;
     setColor(Red) ;
     drawCharAt(enemy[i].x,enemy[i].y,ENEMY) ;
-}
-
-void drawDigitAt(uint8_t x, uint8_t y, uint8_t d) {
-  EMT_24(x,y) ;
-  EMT_16('0'+d) ;
-}
-
-void DivMod10(uint16_t v, uint16_t r, uint16_t * d, uint16_t * m) {
-  *d = 0 ;
-  while (v>=r) {
-    (*d)++ ;
-    v-=r ;
-  }
-  *m = v ;
-}
-
-void drawUIntAt(uint8_t x, uint8_t y, uint16_t v) {
-  const uint16_t D10[4] = { 10000, 1000, 100, 10 } ;
-  static char str[6] ;
-  str[5]=0 ;
-  static uint16_t d ;
-  static uint16_t m ;
-  for (uint8_t i = 0; i<4; i++) {
-    DivMod10(v,D10[i],&d,&m) ;
-    str[i]='0'+d ;
-    v=m ;
-  }
-  str[4]='0'+v ;
-
-  EMT_24(x,y) ;
-  EMT_20(str) ;
-}
-
-void drawStringAt(uint8_t x, uint8_t y, const char * str) {
-  EMT_24(x,y) ;
-  EMT_20(str) ;
-}
-
-uint8_t iabs(int8_t v) {
-  if (v<0) return -v ; else return v ;
 }
 
 uint16_t soundon = 1 ;
@@ -617,10 +393,11 @@ void main()
     DenyKeyboardInterrupt() ;
 
     char key ;
+    uint16_t rnd = 0 ;
     while (1) {
       PrintMenu() ;
       do {
-        seed++ ;
+        Randomize(rnd++) ;
         key = keyHolded() ;
       }
       while ((key<'0')||(key>'4')) ;
