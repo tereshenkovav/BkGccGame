@@ -337,12 +337,16 @@ uint8_t iabs(int8_t v) {
   if (v<0) return -v ; else return v ;
 }
 
+uint16_t soundon = 1 ;
+
 inline void playBonusEffect() {
+   if (!soundon) return ;
    playSound(057,020) ;
    playSound(0127,010) ;
 }
 
 inline void playGameOverEffect() {
+   if (!soundon) return ;
    playSound(0100,047) ;
    playSound(060,077) ;
    playSound(040,0147) ;
@@ -353,8 +357,11 @@ void PrintMenu() {
     setColor(Green) ;
     drawStringAt(2,3,"BK-0010 GCC GAME EXAMPLE") ;
     drawStringAt(5,6,"1 - START GAME") ;
-    drawStringAt(5,7,"2 - HELP") ;
-    drawStringAt(5,8,"0 - EXIT") ;
+    drawStringAt(5,7,"2 - SOUND: ") ;
+    drawStringAt(5,8,"3 - HELP") ;
+    drawStringAt(5,9,"0 - EXIT") ;
+
+    drawStringAt(16,7,soundon?"ON":"OFF") ;
 
     drawStringAt(2,11,"ALEKSANDR V. TERESHENKOV") ;
     drawStringAt(2,12,"github.com/tereshenkovav") ;
@@ -599,9 +606,10 @@ void main()
         seed++ ;
         key = keyHolded() ;
       }
-      while (!((key=='0')||(key=='1')||(key=='2'))) ;
+      while (!((key=='0')||(key=='1')||(key=='2')||(key=='3'))) ;
       if (key=='1') MainGame() ;
-      if (key=='2') PrintHelpAndWaitEnter() ;
+      if (key=='2') soundon=1-soundon ;
+      if (key=='3') PrintHelpAndWaitEnter() ;
       if (key=='0') break ;
     }
     EMT_14() ;
