@@ -338,6 +338,7 @@ uint8_t iabs(int8_t v) {
 }
 
 uint16_t soundon = 1 ;
+uint16_t joyon = 0 ;
 
 inline void playBonusEffect() {
    if (!soundon) return ;
@@ -358,14 +359,16 @@ void PrintMenu() {
     drawStringAt(2,3,"BK-0010 GCC GAME EXAMPLE") ;
     drawStringAt(5,6,"1 - START GAME") ;
     drawStringAt(5,7,"2 - SOUND: ") ;
-    drawStringAt(5,8,"3 - HELP") ;
-    drawStringAt(5,9,"0 - EXIT") ;
+    drawStringAt(5,8,"3 - JOYSTICK: ") ;
+    drawStringAt(5,9,"4 - HELP") ;
+    drawStringAt(5,10,"0 - EXIT") ;
 
     drawStringAt(16,7,soundon?"ON":"OFF") ;
+    drawStringAt(19,8,joyon?"ON":"OFF") ;
 
-    drawStringAt(2,11,"ALEKSANDR V. TERESHENKOV") ;
-    drawStringAt(2,12,"github.com/tereshenkovav") ;
-    drawStringAt(2,13,"/BkGccGame") ;
+    drawStringAt(2,13,"ALEKSANDR V. TERESHENKOV") ;
+    drawStringAt(2,14,"github.com/tereshenkovav") ;
+    drawStringAt(2,15,"/BkGccGame") ;
 }
 
 void PrintHelpAndWaitEnter() {
@@ -461,6 +464,16 @@ void MainGame() {
 
        // Проверка нажатия
        uint8_t key = keyHolded() ;
+
+       // Дополнительная обработка джойстика
+       if ((key==0)&&(joyon)) {
+          uint16_t joykey = readWord(0177714) ;
+          if ((joykey & 01)!=0) key=KEY_UP ;
+          if ((joykey & 02)!=0) key=KEY_RIGHT ;
+          if ((joykey & 04)!=0) key=KEY_DOWN ;
+          if ((joykey & 010)!=0) key=KEY_LEFT ;
+       }
+
        // Если новая клавиша нажата, не равная старой
        if ((key!=0)&&(key!=lastkey)) {
          ticks_player = 0 ;
@@ -606,10 +619,11 @@ void main()
         seed++ ;
         key = keyHolded() ;
       }
-      while (!((key=='0')||(key=='1')||(key=='2')||(key=='3'))) ;
+      while ((key<'0')||(key>'4')) ;
       if (key=='1') MainGame() ;
       if (key=='2') soundon=1-soundon ;
-      if (key=='3') PrintHelpAndWaitEnter() ;
+      if (key=='3') joyon=1-joyon ;
+      if (key=='4') PrintHelpAndWaitEnter() ;
       if (key=='0') break ;
     }
     EMT_14() ;
