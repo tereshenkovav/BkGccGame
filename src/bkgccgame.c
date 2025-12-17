@@ -11,20 +11,24 @@
 // Функции логики
 enum BonusType { btNone=0, btSpeedUp=1, btScore=2, btShield=3 } ;
 
+// Структура бонуса
 struct Bonus {
   uint8_t x ;
   uint8_t y ;
   enum BonusType t ;
 };
 
+// Структура врагов
 struct Enemy {
   uint8_t x ;
   uint8_t y ;
   uint8_t exist ;
 };
 
+// Символы для бонусов
 const char BONUS_CHARS[4] = { 0, 053, 052, 045 } ;
 
+// Переменные игры
 const uint16_t MAXBONUS = 16 ;
 const uint16_t MAXENEMY = 4 ;
 struct Bonus bonuses[16] ;
@@ -35,10 +39,12 @@ uint16_t T_enemy ;
 uint16_t T_newenemy ;
 uint16_t T_player ;
 
+// Символы для вывода героя, врага и пробела
 const char HERO = 0100 ;
 const char ENEMY = 044 ;
 const char SPACE = 040 ;
 
+// Размеры поля и точки спавна врагов
 const uint8_t BORDER = 1 ;
 const uint8_t SIZEX = 30 ;
 const uint8_t SIZEY = 20 ;
@@ -58,6 +64,11 @@ const uint16_t MOVE_PERIOD_PLAYER = 6 ;
 const uint16_t MOVE_PERIOD_PLAYER_FAST = 3 ;
 const uint16_t PERIOD_NEW_ENEMY = 100 ;
 
+// Переменные настройки игры - звук и джойстик
+uint16_t soundon = 1 ;
+uint16_t joyon = 0 ;
+
+// Новый враг
 uint16_t newEnemy() {
    uint8_t idx = genRndByByteN2(2) ;
    for (uint16_t i=0; i<MAXENEMY; i++)
@@ -79,6 +90,7 @@ uint16_t getBonusIdxAt(uint8_t x, uint8_t y) {
    return MAXBONUS ;
 }
 
+// Новый бонус
 uint16_t newBonus(enum BonusType t) {
    for (uint16_t i=0; i<MAXBONUS; i++)
      if (bonuses[i].t==btNone) {
@@ -96,6 +108,7 @@ uint16_t newBonus(enum BonusType t) {
      }
 }
 
+// Двигать игрока
 void movePlayer(int8_t dx, int8_t dy) {
     drawCharAt(playerx,playery,SPACE) ;
     playerx+=dx ;
@@ -104,6 +117,7 @@ void movePlayer(int8_t dx, int8_t dy) {
     drawCharAt(playerx,playery,HERO) ;
 }
 
+// Двигать врага по индексу
 void moveEnemy(int16_t i, uint8_t dx, uint8_t dy) {
     drawCharAt(enemy[i].x,enemy[i].y,SPACE) ;
     uint16_t idx = getBonusIdxAt(enemy[i].x,enemy[i].y) ;
@@ -117,9 +131,7 @@ void moveEnemy(int16_t i, uint8_t dx, uint8_t dy) {
     drawCharAt(enemy[i].x,enemy[i].y,ENEMY) ;
 }
 
-uint16_t soundon = 1 ;
-uint16_t joyon = 0 ;
-
+// Звуковые эффекты
 inline void playBonusEffect() {
    if (!soundon) return ;
    playSound(057,020) ;
