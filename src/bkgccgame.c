@@ -1,4 +1,7 @@
 #include "stdint.h"
+#ifdef GAMELANG_EN
+#include "const_en.h"
+#endif
 
 // Ожидание клавиши
 inline char EMT_6()
@@ -356,17 +359,17 @@ inline void playGameOverEffect() {
 void PrintMenu() {
     ClearScreen() ;
     setColor(Green) ;
-    drawStringAt(2,3,"BK-0010 GCC GAME EXAMPLE") ;
-    drawStringAt(5,6,"1 - START GAME") ;
-    drawStringAt(5,7,"2 - SOUND: ") ;
-    drawStringAt(5,8,"3 - JOYSTICK: ") ;
-    drawStringAt(5,9,"4 - HELP") ;
-    drawStringAt(5,10,"0 - EXIT") ;
+    drawStringAt(2,3,GAMETITLE) ;
+    drawStringAt(5,6,MENU_START) ;
+    drawStringAt(5,7,MENU_SOUND) ;
+    drawStringAt(5,8,MENU_JOY) ;
+    drawStringAt(5,9,MENU_HELP) ;
+    drawStringAt(5,10,MENU_EXIT) ;
 
-    drawStringAt(16,7,soundon?"ON":"OFF") ;
-    drawStringAt(19,8,joyon?"ON":"OFF") ;
+    drawStringAt(16,7,soundon?TEXT_ON:TEXT_OFF) ;
+    drawStringAt(19,8,joyon?TEXT_ON:TEXT_OFF) ;
 
-    drawStringAt(2,13,"ALEKSANDR V. TERESHENKOV") ;
+    drawStringAt(2,13,TEXT_AUTHOR) ;
     drawStringAt(2,14,"github.com/tereshenkovav") ;
     drawStringAt(2,15,"/BkGccGame") ;
 }
@@ -374,16 +377,16 @@ void PrintMenu() {
 void PrintHelpAndWaitEnter() {
     ClearScreen() ;
     setColor(Green) ;
-    drawStringAt(2,3,"  GAME TASK - AVOID OF BUGS") ;
-    drawStringAt(2,4,"AND GAIN MAX SCORES.") ;
-    drawStringAt(2,5,"  HOLD ARROW KEY FOR MOVING") ;
-    drawStringAt(2,6,"AND COLLECT BLUE BONUSES.") ;
+    drawStringAt(2,3,HELP0) ;
+    drawStringAt(2,4,HELP1) ;
+    drawStringAt(2,5,HELP2) ;
+    drawStringAt(2,6,HELP3) ;
     setColor(Blue) ;
-    drawStringAt(2,8,"* - INC SCORE") ;
-    drawStringAt(2,9,"+ - INC SPEED") ;
-    drawStringAt(2,10,"% - INVULNERABILITY") ;
+    drawStringAt(2,8,HELP4) ;
+    drawStringAt(2,9,HELP5) ;
+    drawStringAt(2,10,HELP6) ;
     setColor(Green) ;
-    drawStringAt(2,12,"PRESS ENTER TO MAIN MENU") ;
+    drawStringAt(2,12,HELP7) ;
     while (keyHolded()!=KEY_ENTER) ;
 }
 
@@ -406,9 +409,9 @@ void MainGame() {
     EMT_16(0271) ;
 
     // Вывод надписей
-    drawStringAt(1,SIZEY+2,"SPEEDUP:") ;
-    drawStringAt(11,SIZEY+2,"SHIELD:") ;
-    drawStringAt(20,SIZEY+2,"SCORE:") ;
+    drawStringAt(1,SIZEY+2,BONUS_SPEEDUP) ;
+    drawStringAt(11,SIZEY+2,BONUS_SHIELD) ;
+    drawStringAt(20,SIZEY+2,BONUS_SCORE) ;
 
     playerx = 15 ;
     playery = 10 ;
@@ -529,7 +532,7 @@ void MainGame() {
          if ((iabs(playerx-enemy[i].x)<2)&&(iabs(playery-enemy[i].y)<2)) {
            if (left_bonus_shield==0) {
              setColor(Red) ;
-             drawStringAt(1,SIZEY+3,"GAMEOVER, PRESS ENTER") ;
+             drawStringAt(1,SIZEY+3,TEXT_GAMEOVER) ;
 	     playGameOverEffect() ;
              goto Finish ;
            }
@@ -576,7 +579,7 @@ void MainGame() {
        }
        if (key==KEY_KT) {
           setColor(Red) ;
-          drawStringAt(1,SIZEY+3,"GAMEOVER, PRESS ENTER") ;
+          drawStringAt(1,SIZEY+3,TEXT_GAMEOVER) ;
           break ;
        }
        ticks_common++ ;
