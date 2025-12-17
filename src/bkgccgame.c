@@ -123,6 +123,17 @@ void setColor(enum BkColor bkcolor) {
   writeWord(0214,colors[bkcolor]) ;
 }
 
+void playSound(uint16_t len, uint16_t period) {
+  for (uint16_t i=0; i<len; i++) {
+    writeWord(0177716, 0100) ;
+    for (uint16_t j=0; j<period; j++)
+       asm volatile ("nop\n") ;
+    writeWord(0177716, 0) ;
+    for (uint16_t j=0; j<period; j++)
+       asm volatile ("nop\n") ;
+  }
+}
+
 void drawCharAt(uint8_t x, uint8_t y, char c) {
   EMT_24(x,y) ;
   EMT_16(c) ;
@@ -326,6 +337,17 @@ uint8_t iabs(int8_t v) {
   if (v<0) return -v ; else return v ;
 }
 
+inline void playBonusEffect() {
+   playSound(057,020) ;
+   playSound(0127,010) ;
+}
+
+inline void playGameOverEffect() {
+   playSound(0100,047) ;
+   playSound(060,077) ;
+   playSound(040,0147) ;
+}
+
 void PrintMenu() {
     ClearScreen() ;
     setColor(Green) ;
@@ -467,6 +489,7 @@ void MainGame() {
                idx = newBonus(bt) ;
                setColor(Blue) ;
                drawCharAt(bonuses[idx].x,bonuses[idx].y,BONUS_CHARS[bonuses[idx].t]) ;
+               playBonusEffect() ;
          }
        }
        if (ticks_enemy==0) { // Ограничения по тактам
@@ -487,6 +510,7 @@ void MainGame() {
            if (left_bonus_shield==0) {
              setColor(Red) ;
              drawStringAt(1,SIZEY+3,"GAMEOVER, PRESS ENTER") ;
+	     playGameOverEffect() ;
              goto Finish ;
            }
            else {
@@ -499,6 +523,7 @@ void MainGame() {
              else
                drawCharAt(enemy[i].x,enemy[i].y,SPACE) ;
              enemy[i].exist=0 ;
+             playBonusEffect() ;
            }
          }
         }
